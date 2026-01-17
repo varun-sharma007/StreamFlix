@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streamflix - History</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-900 text-white font-sans">
+
+<nav class="flex justify-between items-center px-10 py-4 bg-black/90 fixed w-full z-50">
+    <div class="flex items-center gap-8">
+        <a href="dashboard.html" class="text-3xl font-bold text-red-600">STREAMFLIX</a>
+        <a href="dashboard.html" class="text-gray-300 hover:text-white transition">Home</a>
+        <a href="history.html" class="text-white font-bold border-b-2 border-red-600">History</a>
+    </div>
+    <button onclick="logout()" class="text-sm bg-red-600 px-4 py-1 rounded">Sign Out</button>
+</nav>
+
+<div class="px-10 py-24">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold">Watch History</h2>
+        <button onclick="clearHistory()" class="text-gray-400 hover:text-red-500 text-sm">Clear History</button>
+    </div>
+
+    <div id="history-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    </div>
+
+    <div id="empty-msg" class="hidden text-gray-500 text-center mt-20 text-xl">
+        You haven't watched any movies yet.
+    </div>
+</div>
+
+<script>
+    if(!localStorage.getItem('userEmail')) window.location.href = 'index.html';
+
+    function loadHistory() {
+        const history = JSON.parse(localStorage.getItem('watchHistory')) || [];
+        const grid = document.getElementById('history-grid');
+        const emptyMsg = document.getElementById('empty-msg');
+
+        if (history.length === 0) {
+            emptyMsg.classList.remove('hidden');
+            grid.innerHTML = '';
+            return;
+        }
+
+        // Reverse to show most recent first
+        grid.innerHTML = history.reverse().map(movie => `
+                <div class="relative group cursor-pointer transition transform hover:scale-105">
+                    <img src="${movie.thumbnailUrl}" class="rounded-md w-full h-40 object-cover opacity-80 group-hover:opacity-100" alt="${movie.title}">
+                    <div class="mt-2">
+                        <h3 class="font-bold text-sm text-gray-200 group-hover:text-white">${movie.title}</h3>
+                        <span class="text-xs text-gray-500">Watched recently</span>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    function clearHistory() {
+        if(confirm('Clear your watch history?')) {
+            localStorage.removeItem('watchHistory');
+            loadHistory();
+        }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+    loadHistory();
+</script>
+</body>
+</html>

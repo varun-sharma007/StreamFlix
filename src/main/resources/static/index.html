@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streamflix - Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-image: url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/US-en-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg'); background-size: cover; }
+        .overlay { background-color: rgba(0,0,0,0.6); }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center overlay font-sans text-white">
+
+<div class="bg-black/80 p-16 rounded-lg w-full max-w-md">
+    <h1 class="text-4xl font-bold mb-8 text-red-600 text-center">Streamflix</h1>
+
+    <div id="login-form">
+        <h2 class="text-2xl font-semibold mb-6">Sign In</h2>
+        <input type="email" id="l-email" placeholder="Email" class="w-full p-4 mb-4 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-red-600">
+        <input type="password" id="l-password" placeholder="Password" class="w-full p-4 mb-8 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-red-600">
+        <button onclick="handleLogin()" class="w-full bg-red-600 py-3 rounded font-bold hover:bg-red-700 transition">Sign In</button>
+        <p class="mt-4 text-gray-400">New here? <span onclick="toggleMode()" class="text-white hover:underline cursor-pointer">Sign up now.</span></p>
+    </div>
+
+    <div id="signup-form" class="hidden">
+        <h2 class="text-2xl font-semibold mb-6">Sign Up</h2>
+        <input type="email" id="s-email" placeholder="Email" class="w-full p-4 mb-4 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-red-600">
+        <input type="password" id="s-password" placeholder="Create Password" class="w-full p-4 mb-8 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-red-600">
+        <button onclick="handleSignup()" class="w-full bg-red-600 py-3 rounded font-bold hover:bg-red-700 transition">Sign Up</button>
+        <p class="mt-4 text-gray-400">Already have an account? <span onclick="toggleMode()" class="text-white hover:underline cursor-pointer">Sign in.</span></p>
+    </div>
+</div>
+
+<script>
+    function toggleMode() {
+        document.getElementById('login-form').classList.toggle('hidden');
+        document.getElementById('signup-form').classList.toggle('hidden');
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('l-email').value;
+        const password = document.getElementById('l-password').value;
+
+        const res = await fetch('/api/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            localStorage.setItem('userRole', data.role);
+            localStorage.setItem('userEmail', data.email);
+            window.location.href = data.role === 'ADMIN' ? 'admin.html' : 'dashboard.html';
+        } else {
+            alert(data.message);
+        }
+    }
+
+    async function handleSignup() {
+        const email = document.getElementById('s-email').value;
+        const password = document.getElementById('s-password').value;
+
+        const res = await fetch('/api/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            alert('Account created! Please Sign In.');
+            toggleMode();
+        } else {
+            alert(data.message);
+        }
+    }
+</script>
+</body>
+</html>

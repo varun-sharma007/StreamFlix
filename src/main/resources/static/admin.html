@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streamflix Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+<nav class="flex justify-between items-center px-10 py-4 bg-black text-white">
+    <div class="text-2xl font-bold text-red-600">STREAMFLIX <span class="text-white text-sm font-normal ml-2">ADMIN</span></div>
+    <button onclick="logout()" class="bg-red-600 px-4 py-1 rounded">Sign Out</button>
+</nav>
+
+<div class="container mx-auto mt-10 p-6">
+
+    <div class="grid grid-cols-2 gap-6 mb-10">
+        <div class="bg-white p-6 rounded shadow border-l-4 border-blue-500">
+            <h3 class="text-gray-500">Total Users</h3>
+            <p class="text-3xl font-bold" id="user-count">0</p>
+        </div>
+        <div class="bg-white p-6 rounded shadow border-l-4 border-green-500">
+            <h3 class="text-gray-500">Total Movies</h3>
+            <p class="text-3xl font-bold" id="movie-count">0</p>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow mb-10">
+        <h2 class="text-xl font-bold mb-4" id="form-title">Add New Movie</h2>
+        <input type="hidden" id="m-id">
+
+        <div class="grid grid-cols-1 gap-4">
+            <input id="m-title" type="text" placeholder="Movie Title" class="border p-2 rounded w-full">
+            <input id="m-thumb" type="text" placeholder="Thumbnail Image URL" class="border p-2 rounded w-full">
+
+            <div class="border p-4 rounded bg-gray-50 bg-gray-50">
+                <label class="block font-bold mb-2">Video Source:</label>
+
+                <input id="m-video" type="text" placeholder="Paste YouTube Embed URL or Direct Link" class="border p-2 rounded w-full mb-3">
+
+                <div class="text-center text-gray-500 text-sm mb-3">- OR -</div>
+
+                <div class="flex gap-2">
+                    <input type="file" id="file-upload" class="border p-2 rounded w-full bg-white" accept="video/mp4,video/mkv">
+                    <button onclick="uploadFile()" id="btn-upload" class="bg-blue-600 text-white px-4 rounded hover:bg-blue-700 whitespace-nowrap">Upload Video</button>
+                </div>
+                <p id="upload-status" class="text-sm mt-2 text-gray-500"></p>
+            </div>
+        </div>
+
+        <div class="mt-4 flex gap-2">
+            <button id="btn-save" onclick="saveMovie()" class="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition">Add Movie</button>
+            <button id="btn-cancel" onclick="resetForm()" class="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500 hidden transition">Cancel Edit</button>
+        </div>
+    </div>
+
+    <h2 class="text-xl font-bold mb-4">Manage Movies</h2>
+    <div class="bg-white rounded shadow overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-gray-200">
+            <tr>
+                <th class="p-4 w-16">#</th>
+                <th class="p-4">Title</th>
+                <th class="p-4 text-right">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="movie-table"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    if(localStorage.getItem('userRole') !== 'ADMIN') window.location.href = 'index.html';
+
+    let allMovies = [];
+
+    async function init() {
+        try {
+            const statRes = await fetch('/api/admin/stats');
+            const stats = await statRes.json();
+            document.getElementById('user-count').innerText = stats.userCount;
+            document.getElementById('movie-count').innerText = stats.movieCount;
+
+            const movieRes = await fetch('/api/movies');
+            allMovies = await movieRes.json();
+            renderTable();
+        } catch (error) { console.error(error); }
+    }
+
+    // --- NEW FILE UPLOAD LOGIC ---
+    async function uploadFile() {
+        const fileInput = document.getElementById('file-upload');
+        const status = document.getElementById('upload-status');
+
+        if(fileInput.files.length === 0) {
+            alert("Please select a file first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        status.innerText = "Uploading... (Please wait)";
+        document.getElementById('btn-upload').disabled = true;
+
+        try {
+            const res = await fetch('/api/admin/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if(data.url) {
+                // Auto-fill the URL input with the new file path
+                document.getElementById('m-video').value = data.url;
+                status.innerText = "Upload Complete! URL set.";
+                status.classList.add("text-green-600");
+            } else {
+                status.innerText = "Upload failed.";
+                status.classList.add("text-red-600");
+            }
+        } catch (e) {
+            status.innerText = "Error uploading.";
+        } finally {
+            document.getElementById('btn-upload').disabled = false;
+        }
+    }
+
+    function renderTable() {
+        const table = document.getElementById('movie-table');
+        if(allMovies.length === 0) {
+            table.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">No movies added yet.</td></tr>';
+            return;
+        }
+        table.innerHTML = allMovies.map((m, index) => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-4 font-bold text-gray-500">${index + 1}</td>
+                    <td class="p-4 font-semibold text-lg">${m.title}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="editMovie(${m.id})" class="text-blue-600 hover:text-blue-800 font-bold mr-4">Edit</button>
+                        <button onclick="deleteMovie(${m.id})" class="text-red-600 hover:text-red-800 font-bold">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+    }
+
+    async function saveMovie() {
+        const id = document.getElementById('m-id').value;
+        const title = document.getElementById('m-title').value;
+        const thumbnailUrl = document.getElementById('m-thumb').value;
+        const videoUrl = document.getElementById('m-video').value;
+
+        if(!title || !thumbnailUrl || !videoUrl) {
+            alert("Please fill in all fields (or upload a video)");
+            return;
+        }
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/admin/movies/${id}` : '/api/admin/movies';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, thumbnailUrl, videoUrl })
+        });
+
+        if (response.ok) { resetForm(); init(); }
+        else { alert("Failed to save."); }
+    }
+
+    function editMovie(id) {
+        const movie = allMovies.find(m => m.id === id);
+        if (!movie) return;
+        document.getElementById('m-id').value = movie.id;
+        document.getElementById('m-title').value = movie.title;
+        document.getElementById('m-thumb').value = movie.thumbnailUrl;
+        document.getElementById('m-video').value = movie.videoUrl;
+
+        document.getElementById('form-title').innerText = "Edit Movie";
+        document.getElementById('btn-save').innerText = "Update Movie";
+        document.getElementById('btn-cancel').classList.remove('hidden');
+        document.getElementById('upload-status').innerText = "";
+    }
+
+    function resetForm() {
+        document.getElementById('m-id').value = '';
+        document.getElementById('m-title').value = '';
+        document.getElementById('m-thumb').value = '';
+        document.getElementById('m-video').value = '';
+        document.getElementById('file-upload').value = '';
+        document.getElementById('upload-status').innerText = "";
+
+        document.getElementById('form-title').innerText = "Add New Movie";
+        document.getElementById('btn-save').innerText = "Add Movie";
+        document.getElementById('btn-cancel').classList.add('hidden');
+    }
+
+    async function deleteMovie(id) {
+        if(confirm('Delete?')) {
+            await fetch(`/api/admin/movies/${id}`, { method: 'DELETE' });
+            init();
+        }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+    init();
+</script>
+</body>
+</html>
