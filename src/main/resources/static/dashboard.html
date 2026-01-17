@@ -172,20 +172,32 @@
     }
 
     // --- PLAYER & HISTORY ---
-    function playMovie(movie) {
-        addToHistory(movie);
-        const modal = document.getElementById('video-modal');
-        const container = document.getElementById('player-container');
-        const url = movie.videoUrl;
+  function playMovie(movie) {
+    addToHistory(movie);
+    const modal = document.getElementById('video-modal');
+    const container = document.getElementById('player-container');
+    let url = movie.videoUrl;
 
-        if (url.includes('youtube') || url.includes('vimeo')) {
-            const embedUrl = url.replace('watch?v=', 'embed/');
-            container.innerHTML = `<iframe src="${embedUrl}?autoplay=1" class="w-full h-full" frameborder="0" allowfullscreen></iframe>`;
-        } else {
-            container.innerHTML = `<video controls autoplay class="w-full h-full"><source src="${url}" type="video/mp4"></video>`;
-        }
-        modal.classList.remove('hidden');
+    // 1. Handle YouTube
+    if (url.includes('youtube') || url.includes('youtu.be')) {
+        const videoId = url.split('v=')[1] || url.split('/').pop();
+        const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        container.innerHTML = `<iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>`;
+    } 
+    // 2. Handle Google Drive (New Fix)
+    else if (url.includes('drive.google.com')) {
+        // Force the URL to be in "preview" mode (which allows embedding)
+        // Replaces '/view' with '/preview'
+        const embedUrl = url.replace(/\/view.*/, '/preview'); 
+        container.innerHTML = `<iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>`;
     }
+    // 3. Handle Direct Video Files (MP4/MKV from Cloudinary)
+    else {
+        container.innerHTML = `<video controls autoplay class="w-full h-full"><source src="${url}" type="video/mp4"></video>`;
+    }
+    
+    modal.classList.remove('hidden');
+}
 
     function addToHistory(movie) {
         let history = JSON.parse(localStorage.getItem('watchHistory')) || [];
