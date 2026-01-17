@@ -89,43 +89,43 @@
 
     // --- NEW FILE UPLOAD LOGIC ---
     async function uploadFile() {
-        const fileInput = document.getElementById('file-upload');
-        const status = document.getElementById('upload-status');
+    const fileInput = document.getElementById('file-upload');
+    const status = document.getElementById('upload-status');
+    
+    if(fileInput.files.length === 0) { alert("Select a file!"); return; }
 
-        if(fileInput.files.length === 0) {
-            alert("Please select a file first.");
-            return;
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    formData.append('upload_preset', 'streamflix_preset'); 
+
+    status.innerText = "Uploading directly to Cloud... (Please wait)";
+    document.getElementById('btn-upload').disabled = true;
+
+    try {
+        
+        const res = await fetch('https://api.cloudinary.com/v1_1/dmluuq675/video/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        
+        if(data.secure_url) {
+            document.getElementById('m-video').value = data.secure_url;
+            status.innerText = "Upload Complete!";
+            status.classList.add("text-green-600");
+        } else {
+            console.error(data);
+            throw new Error('Upload failed');
         }
-
-        const formData = new FormData();
-        formData.append("file", fileInput.files[0]);
-
-        status.innerText = "Uploading... (Please wait)";
-        document.getElementById('btn-upload').disabled = true;
-
-        try {
-            const res = await fetch('/api/admin/upload', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-
-            if(data.url) {
-                // Auto-fill the URL input with the new file path
-                document.getElementById('m-video').value = data.url;
-                status.innerText = "Upload Complete! URL set.";
-                status.classList.add("text-green-600");
-            } else {
-                status.innerText = "Upload failed.";
-                status.classList.add("text-red-600");
-            }
-        } catch (e) {
-            status.innerText = "Error uploading.";
-        } finally {
-            document.getElementById('btn-upload').disabled = false;
-        }
+    } catch (e) {
+        console.error(e);
+        status.innerText = "Error uploading. Check console.";
+    } finally {
+        document.getElementById('btn-upload').disabled = false;
     }
-
+}
     function renderTable() {
         const table = document.getElementById('movie-table');
         if(allMovies.length === 0) {
