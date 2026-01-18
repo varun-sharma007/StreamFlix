@@ -163,26 +163,25 @@
                 </tr>
             `).join('');
     }
+
     async function saveMovie() {
         const id = document.getElementById('m-id').value;
         const title = document.getElementById('m-title').value;
-        const genre = document.getElementById('m-genre').value; // <--- NEW
         const thumbnailUrl = document.getElementById('m-thumb').value;
         const videoUrl = document.getElementById('m-video').value;
 
-        if(!title || !thumbnailUrl || !videoUrl || !genre) { // <--- Check genre
-            alert("Please fill in all fields");
+        if(!title || !thumbnailUrl || !videoUrl) {
+            alert("Please fill in all fields (or upload a video)");
             return;
         }
 
         const method = id ? 'PUT' : 'POST';
         const url = id ? `/api/admin/movies/${id}` : '/api/admin/movies';
 
-        // Include genre in the JSON
         const response = await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, genre, thumbnailUrl, videoUrl })
+            body: JSON.stringify({ title, thumbnailUrl, videoUrl })
         });
 
         if (response.ok) { resetForm(); init(); }
@@ -194,23 +193,27 @@
         if (!movie) return;
         document.getElementById('m-id').value = movie.id;
         document.getElementById('m-title').value = movie.title;
-        document.getElementById('m-genre').value = movie.genre || ""; // <--- NEW
         document.getElementById('m-thumb').value = movie.thumbnailUrl;
         document.getElementById('m-video').value = movie.videoUrl;
 
         document.getElementById('form-title').innerText = "Edit Movie";
         document.getElementById('btn-save').innerText = "Update Movie";
         document.getElementById('btn-cancel').classList.remove('hidden');
+        document.getElementById('upload-status').innerText = "";
     }
 
     function resetForm() {
         document.getElementById('m-id').value = '';
         document.getElementById('m-title').value = '';
-        document.getElementById('m-genre').value = ''; // <--- NEW
         document.getElementById('m-thumb').value = '';
         document.getElementById('m-video').value = '';
+        document.getElementById('upload-status').innerText = "";
 
+        document.getElementById('form-title').innerText = "Add New Movie";
+        document.getElementById('btn-save').innerText = "Add Movie";
+        document.getElementById('btn-cancel').classList.add('hidden');
     }
+
     async function deleteMovie(id) {
         if(confirm('Delete?')) {
             await fetch(`/api/admin/movies/${id}`, { method: 'DELETE' });
