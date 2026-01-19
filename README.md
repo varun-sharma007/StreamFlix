@@ -1,11 +1,10 @@
 🎬 StreamFlix - Video Streaming Platform
 StreamFlix is a scalable full-stack video streaming application that allows users to browse and watch movies and TV shows. It features a robust Admin Dashboard for content management and utilizes cloud infrastructure for optimized media delivery.
 
-🚀 Live Demo
-Click here to visit StreamFlix Live
+🚀 Live Demo  : https://streamflix-bk1j.onrender.com/
 
 🛠️ Tech Stack
-Backend: Java 17, Spring Boot, Hibernate, Spring Security (JWT/Auth)
+Backend: Java 21, Spring Boot, Hibernate, Spring Security (JWT/Auth)
 
 Database: PostgreSQL (Production), H2 Database (Local Development)
 
